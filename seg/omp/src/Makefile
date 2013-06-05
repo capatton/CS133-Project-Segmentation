@@ -1,4 +1,4 @@
-CC=mpicc
+CC=gcc
 
 FFTWDIR	= ../fftw
 OBJDIR	= ../obj
@@ -18,7 +18,7 @@ SEG_EXEC = seg
 
 INCLUDES	= -I$(FFTWDIR)/include
 LIBRARIES	= -L$(FFTWDIR)/lib -lfftw3f -lm
-CFLAGS		= -O3 -g 
+CFLAGS		= -O3 -g -fopenmp 
 
 MRI_DEPS = $(MRI_SRC:%.c=%.o)
 DEN_DEPS = $(DEN_SRC:%.c=%.o)
