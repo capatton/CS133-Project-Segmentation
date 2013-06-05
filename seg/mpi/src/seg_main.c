@@ -4,8 +4,17 @@
 #include <memory.h>
 #include <sys/time.h>
 
-#include "segmentation.h"
 #include "util.h"
+
+#define SQR(x) (x)*(x)
+#define CUB(x) (x)*(x)*(x)
+
+#define phi(i,j)	phi[(i)*width+(j)]
+#define img(i,j)		img[(i)*width+(j)]
+#define curv(i,j)	curv[(i)*width+(j)]
+
+#define epsilon 5e-5f
+
 
 int main(int argc, char *argv[]) {
 
@@ -42,7 +51,7 @@ int main(int argc, char *argv[]) {
 	float c1,c2;
 
 	int iter;
-	int i, j, k;	
+	int k;	
 
 	float mu = 0.18*255*255;
 	float dt = 0.225/mu;
@@ -84,7 +93,7 @@ int main(int argc, char *argv[]) {
 		c2 = num2/den2;
 
 		for(i=1;i<width-1;i++) {
-			for(j=1; j < n-1; j++) {
+			for(j=1; j < height-1; j++) {
 				float Dx_p = phi(i+1,j) - phi(i,j);
 				float Dx_m = phi(i,j) - phi(i-1,j);
 				float Dy_p = phi(i,j+1) - phi(i,j);
@@ -132,7 +141,7 @@ int main(int argc, char *argv[]) {
 
 	// ---------------------------- END OF SEGMENTATION FUNCTION ------------------------------------
 
-	imwrite(contour, N1, N2, fname_out);
+	imwrite(contour, width, height, fname_out);
 
 	return 0;
 }
