@@ -1,0 +1,34 @@
+CS133 Spring 2013 - Project
+Sequential benchmarks
+version: 2013/4/26
+
+Please copy the project folder to your local directory first.
+To compile to binaries, use:
+$ make
+
+This will create three executable files: mri, denoise and seg,
+in ./bin, which represent the three applications in a Medical Imaging
+pipeline. 
+Here is a description of the folders:
+
+./bin	- executable files
+./data	- input spectrum of MRI data
+./obj	- compiled files from source code
+./src	- source code of the three applications. 
+	mri*		-- MRI reconstruction code 
+	denoise*	-- Denoise code
+	seg*		-- segmentation code
+	util.*		-- utility functions (BMP file read/write, etc.)
+./doc	- related documents
+./fftw	- FFTW libraries used by the sequential MRI reconstruction
+
+Execution command lines:
+- MRI 2D reconstruction
+$ ./bin/mri ./data/<input file(*.dat)> ./data/<output image(*.bmp)>
+
+- Image denoising
+$ ./bin/denoise ./data/<input image(*.bmp)> ./data/<output image(*.bmp)>
+
+- Image segmentation
+$ ./bin/seg ./data/<input file(*.bmp)> ./data/<output contour(*.bmp)> Max_iteration
+

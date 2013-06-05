@@ -1,0 +1,56 @@
+Casey Patton (703-910-084)
+
+I'm doing the image segmentation application.
+
+Implementation:
+I did everything inside of the segmentation.c file.  I started the code with a clGetPlatformIDs call.  I then allocated space
+for all the platforms, filled in the platforms, retreived the number of devices, and then used buffers and the kernel to parallelize the code.
+
+Execution times
+I charted execution times on three of the data files:
+
+flower.dat
+Non-parallelized ---
+1 iteration Execution Time: .020
+2 iteration Execution Time: .020s
+4 iteration Execution Time: .022s
+8 iteration Execution Time: .026s
+16 iteration Execution Time: .048s
+124 iteration Execution Time: .214s
+1000 iteration Execution Time: 2.101s
+5000 iteration Execution Time: 9.447s
+12000 iteration Execution Time: 27.25s
+
+Parallelized ---
+1 iteration Execution Time: .022s
+2 iteration Execution Time: .021s
+4 iteration Execution Time: .029s
+8 iteration Execution Time: .031s
+16 iteration Execution Time: .05s
+124 iteration Execution Time: .155s 
+1000 iteration Execution Time: 2.012s 
+5000 iteration Execution Time: 4.900
+12000 iteration Execution Time: 12.725s 
+
+chest.dat
+Non-Parallelized
+1 iteration Execution Time: .014s
+2 iteration Execution Time: .012s
+4 iteration Execution Time: .032s
+8 iteration Execution Time: .032s
+16 iteration Execution Time: .057s
+124 iteration Execution Time: .091s
+1000 iteration Execution Time: .947s
+5000 iteration Execution Time: 5.021s
+12000 iteration Execution Time: 13.116s
+
+Parallelized ---
+1 iteration Execution Time: .016s 
+2 iteration Execution Time: .026s 
+4 iteration Execution Time: .024s 
+8 iteration Execution Time: .023s 
+16 iteration Execution Time: .127s
+124 iteration Execution Time: .065s 
+1000 iteration Execution Time: .61s
+5000 iteration Execution Time: 2.991s
+12000 iteration Execution Time: 8.731s

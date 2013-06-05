@@ -1,0 +1,57 @@
+Casey Patton (703-910-084)
+
+I'm doing the image segmentation application.
+
+Implementation:
+I initialized MPI inside of the seg_main.c function, and then parallelized things inside of the segmentation.c function. In order to parallelize,
+I divided up the "countour" float and had each process calculate a section of the array.  After everything returned, inside of seg_main.c, I did a 
+join on all the processes.
+
+Execution times
+I charted execution times on three of the data files:
+
+flower.dat
+Non-parallelized ---
+1 iteration Execution Time: .018s
+2 iteration Execution Time: .019s
+4 iteration Execution Time: .023s
+8 iteration Execution Time: .023s
+16 iteration Execution Time: .044s
+124 iteration Execution Time: .200s
+1000 iteration Execution Time: 2.010s
+5000 iteration Execution Time: 9.347s
+12000 iteration Execution Time: 27.05s
+
+Parallelized ---
+1 iteration Execution Time: .018s
+2 iteration Execution Time: .018s
+4 iteration Execution Time: .028s
+8 iteration Execution Time: .027s
+16 iteration Execution Time: .057s
+124 iteration Execution Time: .135s 
+1000 iteration Execution Time: 2.000s 
+5000 iteration Execution Time: 4.903s 
+12000 iteration Execution Time: 12.325s 
+
+chest.dat
+Non-Parallelized
+1 iteration Execution Time: .013s
+2 iteration Execution Time: .013s
+4 iteration Execution Time: .029s
+8 iteration Execution Time: .025s
+16 iteration Execution Time: .061s
+124 iteration Execution Time: .089s
+1000 iteration Execution Time: .942s
+5000 iteration Execution Time: 5.001s
+12000 iteration Execution Time: 13.016s
+
+Parallelized ---
+1 iteration Execution Time: .014s 
+2 iteration Execution Time: .024s 
+4 iteration Execution Time: .027s 
+8 iteration Execution Time: .026s 
+16 iteration Execution Time: .121s
+124 iteration Execution Time: .087s 
+1000 iteration Execution Time: .599s
+5000 iteration Execution Time: 2.997s
+12000 iteration Execution Time: 8.630s
