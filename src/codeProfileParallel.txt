@@ -1,0 +1,55 @@
+Casey Patton (703-910-084)
+
+I'm doing the image segmentation application.
+
+Implementation:
+I just stuck "#pragma omp parallel for" statements everywhere they could go. I was able to parallelize 6 different for loops and cut the speed a pretty good amount on large iteration amounts.  However, because of the overhead, there wasn't always an improvement on low iteration test cases.
+
+Execution times
+I charted execution times on three of the data files:
+
+flower.dat
+Non-parallelized ---
+1 iteration Execution Time: .018s
+2 iteration Execution Time: .018s
+4 iteration Execution Time: .022s
+8 iteration Execution Time: .028s
+16 iteration Execution Time: .036s
+124 iteration Execution Time: .190s
+1000 iteration Execution Time: 2.002s
+5000 iteration Execution Time: 10.347s
+12000 iteration Execution Time: 25.02s
+
+Parallelized ---
+1 iteration Execution Time: .015s
+2 iteration Execution Time: .014s
+4 iteration Execution Time: .022s
+8 iteration Execution Time: .028s
+16 iteration Execution Time: .039s
+124 iteration Execution Time: .127s 
+1000 iteration Execution Time: 1.001s 
+5000 iteration Execution Time: 4.503s 
+12000 iteration Execution Time: 11.317s 
+
+chest.dat
+Non-Parallelized
+1 iteration Execution Time: .015s
+2 iteration Execution Time: .016s
+4 iteration Execution Time: .018s
+8 iteration Execution Time: .022s
+16 iteration Execution Time: .031s
+124 iteration Execution Time: .092s
+1000 iteration Execution Time: .853s
+5000 iteration Execution Time: 4.990s
+12000 iteration Execution Time: 12.056s
+
+Parallelized ---
+1 iteration Execution Time: .011s 
+2 iteration Execution Time: .021s 
+4 iteration Execution Time: .022s 
+8 iteration Execution Time: .025s 
+16 iteration Execution Time: .026s
+124 iteration Execution Time: .098s 
+1000 iteration Execution Time: .699s
+5000 iteration Execution Time: 3.423s
+12000 iteration Execution Time: 8.660s
