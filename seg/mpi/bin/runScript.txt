@@ -1,0 +1,1 @@
+mpirun -np 16 ./seg file.bmp fileout.bmp 20

@@ -5,6 +5,7 @@
 #include <sys/time.h>
 
 #include "util.h"
+#include <mpi.h>
 
 #define SQR(x) (x)*(x)
 #define CUB(x) (x)*(x)*(x)
@@ -17,6 +18,14 @@
 
 
 int main(int argc, char *argv[]) {
+
+	MPI_Init(&argc, &argv);
+
+	int numProcessors, procRank;
+	MPI_Comm_size(MPI_COMM_WORLD, &numProcessors);
+	MPI_Comm_rank(MPI_COMM_WORLD, &procRank);
+
+	printf("Processor number: %d", procRank);
 
 	int MaxIter = 50;
 
@@ -143,5 +152,6 @@ int main(int argc, char *argv[]) {
 
 	imwrite(contour, width, height, fname_out);
 
+	MPI_Finalize();
 	return 0;
 }
