@@ -15,17 +15,15 @@
 #define curv(i,j)	curv[(i)*width+(j)]
 
 #define epsilon 5e-5f
-
+const int MASTER = 0;
 
 int main(int argc, char *argv[]) {
 
 	MPI_Init(&argc, &argv);
 
-	int numProcessors, procRank;
-	MPI_Comm_size(MPI_COMM_WORLD, &numProcessors);
-	MPI_Comm_rank(MPI_COMM_WORLD, &procRank);
-
-	printf("Processor number: %d", procRank);
+	int pNum, pRank;
+	MPI_Comm_size(MPI_COMM_WORLD, &pNum);
+	MPI_Comm_rank(MPI_COMM_WORLD, &pRank);
 
 	int MaxIter = 50;
 
@@ -47,15 +45,30 @@ int main(int argc, char *argv[]) {
 	float *img;
 	float *contour;
 	
+	int err;
 	//reads fname, stores the array of floats in img, N1 = width of image, N2 = height of image
-	int err = imread(&img, &width, &height, fname);
-	if (err!=0) return err;
+	if (pRank == MASTER)
+	{
+		err = imread(&img, &width, &height, fname); // err ignored for now
+	}
+	//give all other processes the width and height
+	MPI_Bcast(&width, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+	MPI_Bcast(&height, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+	
+	const float IMG_AMT_PER_PROCESSOR = width * height / pNum;
+
+	// scatter img from master to all other processes
+	float *img_local = (float*)calloc(IMG_AMT_PER_PROCESSOR, sizeof(float));
+	MPI_Scatter(img, IMG_AMT_PER_PROCESSOR, MPI_FLOAT, img_local, IMG_AMT_PER_PROCESSOR, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
 
 	contour = (float*)calloc(width*height, sizeof(float));
 
 	// ---------------------------- START OF SEGMENTATION FUNCTION ------------------------------------
-	float* curv	= (float*)calloc(width*height,sizeof(float));
-	float* phi	= (float*)calloc(width*height,sizeof(float));
+	// curv and phi each need the amount of space needed for the image, plus a little buffer on the left and the right
+	// to grab the column from the neighboring process
+	const float BUFFER_SPACE = 2 * height;
+	float* curv	= (float*)calloc(IMG_AMT_PER_PROCESSOR + BUFFER_SPACE,sizeof(float));
+	float* phi	= (float*)calloc(IMG_AMT_PER_PROCESSOR + BUFFER_SPACE,sizeof(float));
 
 	float c1,c2;
 
