@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
 
 	const int SECTION_WIDTH = width / pNum;
 
+	//You wrote the notes for this.  I think this is right.
 	for(i=0; i < SECTION_WIDTH; i++) {
 		for(j=0; j < height; j++) {
 
@@ -96,6 +97,9 @@ int main(int argc, char *argv[]) {
 		float num2 = 0;
 		int   den1 = 0;
 		int   den2 = 0;
+
+		// Each process calculates their own num1/den1/.... then reduces to one value on rank 0, then rank 0 calculates c1/c2, 
+		// then broadcasts that
 		for(i=0; i<SECTION_WIDTH; i++) {
 			for(j=0; j < height; j++) {
 				if(phi[i*width + j] < 0) {
@@ -109,9 +113,26 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		c1 = num1/den1;
-		c2 = num2/den2;
+		float num1_out;
+		float num2_out;
+		int den1_out;
+		int den2_out;
+		MPI_Reduce((void*)&num1, (void*)&num1_out, 1, MPI_FLOAT, MPI_SUM, MASTER, MPI_COMM_WORLD);	
+		MPI_Reduce((void*)&num2, (void*)&num2_out, 1, MPI_FLOAT, MPI_SUM, MASTER, MPI_COMM_WORLD);	
+		MPI_Reduce((void*)&den1, (void*)&den1_out, 1, MPI_INT, MPI_SUM, MASTER, MPI_COMM_WORLD);	
+		MPI_Reduce((void*)&den2, (void*)&den2_out, 1, MPI_INT, MPI_SUM, MASTER, MPI_COMM_WORLD);	
 
+
+		if (pRank == MASTER){
+			c1 = num1_out/den1_out;
+			c2 = num2_out/den2_out;
+		}
+
+		MPI_Bcast(&c1, 1, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
+		MPI_Bcast(&c2, 1, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
+
+		// I THINK ITS CORRECT UP TO HERE
+		
 		for(i=1;i<SECTION_WIDTH-1;i++) {
 			for(j=1; j < height-1; j++) {
 				float Dx_p = phi[(i+1)*width + j] - phi[i*width + j];
@@ -147,6 +168,7 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
+
 	for(i=1; i<SECTION_WIDTH; i++) {
 		for (j=1; j<height; j++) {
 			if (phi[i*width + j]*phi[(i-1)*width + j]<0 || phi[i*width + j]*phi[i*width + j-1]<0) 
