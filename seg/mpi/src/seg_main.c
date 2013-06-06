@@ -83,13 +83,13 @@ int main(int argc, char *argv[]) {
 	for(i=0; i < SECTION_WIDTH; i++) {
 		for(j=0; j < height; j++) {
 
-			float xx = i;
-			float yy = j;
+			float xx =  i+(pRank*width)/pNum;
+			float yy =  j;
 			phi[i*width + j]	= sqrtf(SQR(xx-xcent) + SQR(yy-ycent)) - r;
 			curv[i*width + j]	= 0;
 		}
 	}
-	
+
 	for(iter=0; iter<MaxIter; iter++) {
 
 		float num1 = 0;
