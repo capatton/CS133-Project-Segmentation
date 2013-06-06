@@ -10,10 +10,6 @@
 #define SQR(x) (x)*(x)
 #define CUB(x) (x)*(x)*(x)
 
-#define phi(i,j)	phi[(i)*width+(j)]
-#define img(i,j)		img[(i)*width+(j)]
-#define curv(i,j)	curv[(i)*width+(j)]
-
 #define epsilon 5e-5f
 const int MASTER = 0;
 
@@ -55,7 +51,7 @@ int main(int argc, char *argv[]) {
 	MPI_Bcast(&width, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
 	MPI_Bcast(&height, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
 	
-	const float IMG_AMT_PER_PROCESSOR = width * height / pNum;
+	const int IMG_AMT_PER_PROCESSOR = width * height / pNum;
 
 	// scatter img from master to all other processes
 	float *img_local = (float*)calloc(IMG_AMT_PER_PROCESSOR, sizeof(float));
@@ -82,13 +78,15 @@ int main(int argc, char *argv[]) {
 	float ycent = (height-1) / 2.0;
 	float r = fmin(width,height) / 2.0;
 
-	for(i=0; i < width; i++) {
+	const int SECTION_WIDTH = width / pNum;
+
+	for(i=0; i < SECTION_WIDTH; i++) {
 		for(j=0; j < height; j++) {
 
 			float xx = i;
 			float yy = j;
-			phi(i, j)	= sqrtf(SQR(xx-xcent) + SQR(yy-ycent)) - r;
-			curv(i, j)	= 0;
+			phi[i*width + j]	= sqrtf(SQR(xx-xcent) + SQR(yy-ycent)) - r;
+			curv[i*width + j]	= 0;
 		}
 	}
 	for(iter=0; iter<MaxIter; iter++) {
@@ -97,15 +95,14 @@ int main(int argc, char *argv[]) {
 		float num2 = 0;
 		int   den1 = 0;
 		int   den2 = 0;
-
-		for(i=0; i<width; i++) {
+		for(i=0; i<SECTION_WIDTH; i++) {
 			for(j=0; j < height; j++) {
-				if(phi(i,j) < 0) {
-					num1 += 256*img(i,j);
+				if(phi[i*width + j] < 0) {
+					num1 += 256*img[i*width + j];
 					den1 +=  1;
 				}
-				else if(phi(i,j) > 0) {
-					num2  += 256*img(i,j);
+				else if(phi[i*width + j]  > 0) {
+					num2  += 256*img[i*width + j];
 					den2  += 1;
 				}
 			}
@@ -114,44 +111,44 @@ int main(int argc, char *argv[]) {
 		c1 = num1/den1;
 		c2 = num2/den2;
 
-		for(i=1;i<width-1;i++) {
+		for(i=1;i<SECTION_WIDTH-1;i++) {
 			for(j=1; j < height-1; j++) {
-				float Dx_p = phi(i+1,j) - phi(i,j);
-				float Dx_m = phi(i,j) - phi(i-1,j);
-				float Dy_p = phi(i,j+1) - phi(i,j);
-				float Dy_m = phi(i,j) - phi(i,j-1);
+				float Dx_p = phi[(i+1)*width + j] - phi[i*width + j];
+				float Dx_m = phi[i*width + j] - phi[(i-1)*width + j];
+				float Dy_p = phi[i*width + j + 1] - phi[i*width + j];
+				float Dy_m = phi[i*width + j] - phi[i*width + j - 1];
 
-				float Dx_0 = (phi(i+1,j) - phi(i-1,j))/2;
-				float Dy_0 = (phi(i,j+1) - phi(i,j-1))/2;
+				float Dx_0 = (phi[(i+1)*width + j] - phi[(i-1)*width + j])/2;
+				float Dy_0 = (phi[i*width + j + 1] - phi[i*width + j - 1])/2;
 
 				float Dxx = Dx_p - Dx_m ;
 				float Dyy = Dy_p - Dy_m ;
 
-				float Dxy = (phi(i+1,j+1) - phi(i+1,j-1) - phi(i-1,j+1) + phi(i-1,j-1)) / 4;
+				float Dxy = (phi[(i+1)*width + j+1] - phi[(i+1)*width + j-1]- phi[(i-1)*width + j+1] + phi[(i-1)*width + j-1]) / 4;
 
 				float Grad	= sqrtf(Dx_0*Dx_0 + Dy_0*Dy_0);
 				float K		= (Dx_0*Dx_0*Dyy - 2*Dx_0*Dy_0*Dxy + Dy_0*Dy_0*Dxx) / (CUB(Grad) + epsilon);
 
-				curv(i, j) = Grad*(mu*K + SQR(256*img(i,j)-c1) - SQR(256*img(i,j)-c2));
+				curv[i*width + j] = Grad*(mu*K + SQR(256*img[i*width + j]-c1) - SQR(256*img[i*width + j]-c2));
 			}
 		}
 		for(j=0; j < height; j++) {
-			curv( 0, j) = curv( 1, j);
-			curv(width-1,j) = curv(width-2,j);
+			curv[j] = curv[width + j];
+			curv[(width - 1)*width + j] = curv[(width-2)*width + j];
 		}
-		for(i=0; i < width; i++) {
-			curv(i, 0 ) = curv(i, 1 );
-			curv(i,height-1) = curv(i,height-2);
+		for(i=0; i < SECTION_WIDTH; i++) {
+			curv[i*width] = curv[i*width + 1];
+			curv[i*width + (height - 1)] = curv[i*width + (height - 2)];
 		}
-		for(i=0; i<width; i++) {
+		for(i=0; i<SECTION_WIDTH; i++) {
 			for (j=0; j<height; j++) {
-				phi(i, j) += curv(i, j) * dt;
+				phi[i*width + j] += curv[i*width + j] * dt;
 			}
 		}
 	}
-	for(i=1; i<width; i++) {
+	for(i=1; i<SECTION_WIDTH; i++) {
 		for (j=1; j<height; j++) {
-			if (phi(i, j)*phi(i-1, j)<0 || phi(i, j)*phi(i, j-1)<0) 
+			if (phi[i*width + j]*phi[(i-1)*width + j]<0 || phi[i*width + j]*phi[i*width + j-1]<0) 
 				contour[i*height+j] = 0.99;
 			else 
 				contour[i*height+j] = 0;
