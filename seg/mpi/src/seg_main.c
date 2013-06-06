@@ -42,6 +42,7 @@ int main(int argc, char *argv[]) {
 	float *contour;
 	
 	int err;
+
 	//reads fname, stores the array of floats in img, N1 = width of image, N2 = height of image
 	if (pRank == MASTER)
 	{
@@ -51,7 +52,7 @@ int main(int argc, char *argv[]) {
 	MPI_Bcast(&width, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
 	MPI_Bcast(&height, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
 	
-	const int IMG_AMT_PER_PROCESSOR = width * height / pNum + 1;
+	const int IMG_AMT_PER_PROCESSOR = width * height / pNum;
 
 	// scatter img from master to all other processes
 	float *img_local = (float*)calloc(IMG_AMT_PER_PROCESSOR, sizeof(float));
@@ -63,8 +64,9 @@ int main(int argc, char *argv[]) {
 	// curv and phi each need the amount of space needed for the image, plus a little buffer on the left and the right
 	// to grab the column from the neighboring process
 	const float BUFFER_SPACE = 2 * height;
-	float* curv	= (float*)calloc(IMG_AMT_PER_PROCESSOR + BUFFER_SPACE,sizeof(float));
-	float* phi	= (float*)calloc(IMG_AMT_PER_PROCESSOR + BUFFER_SPACE,sizeof(float));
+	//+ BUFFER_SPACE TO do YJs thing
+	float* curv	= (float*)calloc(IMG_AMT_PER_PROCESSOR,sizeof(float));
+	float* phi	= (float*)calloc(IMG_AMT_PER_PROCESSOR,sizeof(float));
 
 	float c1,c2;
 
@@ -91,6 +93,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+
 	for(iter=0; iter<MaxIter; iter++) {
 
 		float num1 = 0;
@@ -100,18 +103,21 @@ int main(int argc, char *argv[]) {
 
 		// Each process calculates their own num1/den1/.... then reduces to one value on rank 0, then rank 0 calculates c1/c2, 
 		// then broadcasts that
+
+		//thread 1 getting STUCK in here
 		for(i=0; i<SECTION_WIDTH; i++) {
 			for(j=0; j < height; j++) {
 				if(phi[i*width + j] < 0) {
-					num1 += 256*img[i*width + j];
+					num1 += 256*img_local[i*width + j];
 					den1 +=  1;
 				}
 				else if(phi[i*width + j]  > 0) {
-					num2  += 256*img[i*width + j];
+					num2  += 256*img_local[i*width + j];
 					den2  += 1;
 				}
 			}
 		}
+
 
 		float num1_out;
 		float num2_out;
@@ -122,7 +128,6 @@ int main(int argc, char *argv[]) {
 		MPI_Reduce((void*)&den1, (void*)&den1_out, 1, MPI_INT, MPI_SUM, MASTER, MPI_COMM_WORLD);	
 		MPI_Reduce((void*)&den2, (void*)&den2_out, 1, MPI_INT, MPI_SUM, MASTER, MPI_COMM_WORLD);	
 
-
 		if (pRank == MASTER){
 			c1 = num1_out/den1_out;
 			c2 = num2_out/den2_out;
@@ -131,8 +136,9 @@ int main(int argc, char *argv[]) {
 		MPI_Bcast(&c1, 1, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
 		MPI_Bcast(&c2, 1, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
 
+
 		// I THINK ITS CORRECT UP TO HERE
-		
+
 		for(i=1;i<SECTION_WIDTH-1;i++) {
 			for(j=1; j < height-1; j++) {
 				float Dx_p = phi[(i+1)*width + j] - phi[i*width + j];
@@ -151,25 +157,26 @@ int main(int argc, char *argv[]) {
 				float Grad	= sqrtf(Dx_0*Dx_0 + Dy_0*Dy_0);
 				float K		= (Dx_0*Dx_0*Dyy - 2*Dx_0*Dy_0*Dxy + Dy_0*Dy_0*Dxx) / (CUB(Grad) + epsilon);
 
-				curv[i*width + j] = Grad*(mu*K + SQR(256*img[i*width + j]-c1) - SQR(256*img[i*width + j]-c2));
+				curv[i*width + j] = Grad*(mu*K + SQR(256*img_local[i*width + j]-c1) - SQR(256*img_local[i*width + j]-c2));
 			}
 		}
+
 		for(j=0; j < height; j++) {
 			curv[j] = curv[width + j];
 			curv[(width - 1)*width + j] = curv[(width-2)*width + j];
 		}
-		for(i=0; i < SECTION_WIDTH; i++) {
+		for(i=0; i < width; i++) {
 			curv[i*width] = curv[i*width + 1];
 			curv[i*width + (height - 1)] = curv[i*width + (height - 2)];
 		}
-		for(i=0; i<SECTION_WIDTH; i++) {
+		for(i=0; i<width; i++) {
 			for (j=0; j<height; j++) {
 				phi[i*width + j] += curv[i*width + j] * dt;
 			}
 		}
-	}
+	
 
-	for(i=1; i<SECTION_WIDTH; i++) {
+	for(i=1; i<width; i++) {
 		for (j=1; j<height; j++) {
 			if (phi[i*width + j]*phi[(i-1)*width + j]<0 || phi[i*width + j]*phi[i*width + j-1]<0) 
 				contour[i*height+j] = 0.99;
@@ -177,19 +184,19 @@ int main(int argc, char *argv[]) {
 				contour[i*height+j] = 0;
 		}
 	}
+}
+
 
 	free(phi);
 	free(curv);
 
+
 	// ---------------------------- END OF SEGMENTATION FUNCTION ------------------------------------
-	float* contour_out = (float*)calloc(width*height, sizeof(float));
+	
+	
+	imwrite(contour, width, height, fname_out);
 
-	//gather the contour results
-	MPI_Gather(contour, SECTION_WIDTH, MPI_FLOAT, contour_out, SECTION_WIDTH, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
-
-	if (pRank == MASTER){
-		imwrite(contour_out, width, height, fname_out);
-	}
+	
 
 	MPI_Finalize();
 	return 0;
