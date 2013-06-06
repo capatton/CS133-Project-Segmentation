@@ -51,13 +51,13 @@ int main(int argc, char *argv[]) {
 	MPI_Bcast(&width, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
 	MPI_Bcast(&height, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
 	
-	const int IMG_AMT_PER_PROCESSOR = width * height / pNum;
+	const int IMG_AMT_PER_PROCESSOR = width * height / pNum + 1;
 
 	// scatter img from master to all other processes
 	float *img_local = (float*)calloc(IMG_AMT_PER_PROCESSOR, sizeof(float));
 	MPI_Scatter(img, IMG_AMT_PER_PROCESSOR, MPI_FLOAT, img_local, IMG_AMT_PER_PROCESSOR, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
 
-	contour = (float*)calloc(width*height, sizeof(float));
+	contour = (float*)calloc(IMG_AMT_PER_PROCESSOR, sizeof(float));
 
 	// ---------------------------- START OF SEGMENTATION FUNCTION ------------------------------------
 	// curv and phi each need the amount of space needed for the image, plus a little buffer on the left and the right
@@ -89,6 +89,7 @@ int main(int argc, char *argv[]) {
 			curv[i*width + j]	= 0;
 		}
 	}
+	
 	for(iter=0; iter<MaxIter; iter++) {
 
 		float num1 = 0;
@@ -159,8 +160,14 @@ int main(int argc, char *argv[]) {
 	free(curv);
 
 	// ---------------------------- END OF SEGMENTATION FUNCTION ------------------------------------
+	float* contour_out = (float*)calloc(width*height, sizeof(float));
 
-	imwrite(contour, width, height, fname_out);
+	//gather the contour results
+	MPI_Gather(contour, SECTION_WIDTH, MPI_FLOAT, contour_out, SECTION_WIDTH, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
+
+	if (pRank == MASTER){
+		imwrite(contour_out, width, height, fname_out);
+	}
 
 	MPI_Finalize();
 	return 0;
