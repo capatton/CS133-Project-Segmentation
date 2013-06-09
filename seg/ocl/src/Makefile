@@ -1,4 +1,4 @@
-CC=mpicc
+CC=gcc
 
 FFTWDIR	= ../fftw
 OBJDIR	= ../obj
@@ -17,8 +17,8 @@ DEN_EXEC = denoise
 SEG_EXEC = seg
 
 INCLUDES	= -I$(FFTWDIR)/include
-LIBRARIES	= -L$(FFTWDIR)/lib -lfftw3f -lm
-CFLAGS		= -O3 -g 
+LIBRARIES	= -L$(FFTWDIR)/lib -lfftw3f -lm -I$OPENCL_ROOT/include -L$OPENCL_ROOT/lib64 -lOpenCL
+CFLAGS		= -O3 -g
 
 MRI_DEPS = $(MRI_SRC:%.c=%.o)
 DEN_DEPS = $(DEN_SRC:%.c=%.o)
