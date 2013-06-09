@@ -9,6 +9,15 @@
 
 int main(int argc, char *argv[]) {
 
+	const char *kernelCode = 
+		"#define SQR(x) (x)*(x)\n"
+		"define CUB(x) (x)*(x)*(x)\n"
+		"#define phi(i,j)	phi[(i)*m+(j)]\n"
+		"#define u(i,j)		u[(i)*m+(j)]\n"
+		"#define curv(i,j)	curv[(i)*m+(j)]\n"
+		"#define epsilon 5e-5f\n";
+		
+		
 	int MaxIter = 50;
 
 	if(argc<2) 
