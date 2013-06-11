@@ -8,7 +8,8 @@ MRI_SRC  = 	mri_main.c \
 	     	mri.c
 DEN_SRC  = 	denoise_main.c \
 	     	denoise.c
-SEG_SRC  = 	seg_main.c
+SEG_SRC  = 	seg_main.c \
+			seg.c
 COMM_SRC =	util.c
 
 MRI_EXEC = mri

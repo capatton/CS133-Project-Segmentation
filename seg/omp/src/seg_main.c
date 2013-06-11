@@ -4,7 +4,7 @@
 #include <memory.h>
 #include <sys/time.h>
 
-#include "segmentation.h"
+#include "seg.h"
 #include "util.h"
 
 int main(int argc, char *argv[]) {
